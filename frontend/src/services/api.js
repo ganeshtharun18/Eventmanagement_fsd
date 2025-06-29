@@ -234,3 +234,10 @@ export const exportEventsPDF = async () => {
     throw error;
   }
 };
+
+
+export const getUpcomingEvents = async (username) => {
+  const response = await fetch(`${API_URL}/upcoming-events/${username}`);
+  if (!response.ok) throw new Error('Failed to fetch upcoming events');
+  return response.json();
+};

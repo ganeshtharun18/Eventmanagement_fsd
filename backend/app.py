@@ -632,43 +632,65 @@ def export_events_pdf():
     return response
 
 # Reminder Service
+from datetime import datetime
+import sqlite3
+from flask import Flask
+from io import BytesIO
+
+DB_NAME = "event_management.db"
+
 def check_upcoming_events():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
+    # Ensure date is in YYYY-MM-DD format
     cursor.execute("""
-    SELECT e.*, u.email 
-    FROM events e
-    JOIN users u ON e.username = u.username
-    WHERE date(e.Date) = date('now', '+1 day')
-    AND e.reminder_sent = 0
-    AND u.email IS NOT NULL
+        SELECT e.ID, e.Name, e.Description, e.Date, e.Time, e.Location, e.username, e.reminder_sent, u.email 
+        FROM events e
+        JOIN users u ON e.username = u.username
+        WHERE date(e.Date) = date('now', '+1 day')
+        AND e.reminder_sent = 0
+        AND u.email IS NOT NULL
     """)
     
     upcoming_events = cursor.fetchall()
     
+    if not upcoming_events:
+        print("✅ No upcoming events found for tomorrow.")
+    else:
+        print(f"📅 Found {len(upcoming_events)} upcoming events for tomorrow.\n")
+
     for event in upcoming_events:
         send_event_reminder(event)
-        cursor.execute(
-            "UPDATE events SET reminder_sent = 1 WHERE ID = ?",
-            (event[0],)
-        )
-    
+        
+        # Mark reminder as sent
+        cursor.execute("UPDATE events SET reminder_sent = 1 WHERE ID = ?", (event[0],))
+
     conn.commit()
     conn.close()
 
+
 def send_event_reminder(event):
-    # Pseudo-code for sending email
-    if SENDGRID_API_KEY:
-        subject = f"Reminder: {event[1]} is happening tomorrow"
-        content = f"""
-        <h2>{event[1]}</h2>
-        <p>Date: {event[3]} at {event[4]}</p>
-        <p>Location: {event[5]}</p>
-        <p>{event[2]}</p>
-        """
-        # Actual email sending would go here
-        print(f"Would send reminder for {event[1]} to {event[8]}")
+    event_id, name, desc, date, time, location, username, reminder_sent, email = event
+    
+    subject = f"Reminder: {name} is happening tomorrow"
+    content = f"""
+    📢 Event Reminder:
+    --------------------------
+    Title      : {name}
+    Date       : {date} at {time}
+    Location   : {location}
+    Description: {desc}
+    --------------------------
+    """
+
+    # Replace this print with real email logic
+    print(f"📬 Sending reminder to {email} for event '{name}' on {date} at {time}\n")
+    
+    # Example placeholder for real email integration:
+    # if SENDGRID_API_KEY:
+    #     send_email(email, subject, content)
+
 
 def send_announcement_emails(title, content, recipients):
     # Pseudo-code for sending announcement emails
@@ -681,6 +703,31 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(func=check_upcoming_events, trigger="interval", hours=24)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
+
+@app.route('/api/upcoming-events/<username>', methods=['GET'])
+def get_upcoming_events(username):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT ID, Name, Description, Date, Time, Location 
+        FROM events
+        WHERE username = ?
+        AND datetime(Date || 'T' || Time) BETWEEN datetime('now') AND datetime('now', '+1 day')
+        AND reminder_sent = 0
+    """, (username,))
+    
+    events = [{
+        'id': row[0],
+        'name': row[1],
+        'description': row[2],
+        'date': row[3],
+        'time': row[4],
+        'location': row[5]
+    } for row in cursor.fetchall()]
+    
+    conn.close()
+    return jsonify(events)
+
 
 # Initialize database and start app
 if __name__ == '__main__':
