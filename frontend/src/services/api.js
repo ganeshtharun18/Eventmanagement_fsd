@@ -1,12 +1,14 @@
 const API_URL = 'http://localhost:5000/api';
 
-// Auth endpoints
+// Static admin secret (move to .env in production)
+const adminSecret = 'supersecretkey123';
+
+// ------------------ AUTH ------------------
+
 export const register = async (userData) => {
   const response = await fetch(`${API_URL}/register`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData),
   });
   return response.json();
@@ -15,15 +17,14 @@ export const register = async (userData) => {
 export const login = async (credentials) => {
   const response = await fetch(`${API_URL}/login`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
   });
   return response.json();
 };
 
-// Event endpoints
+// ------------------ EVENTS ------------------
+
 export const getEvents = async (username, role) => {
   const response = await fetch(`${API_URL}/events?username=${username}&role=${role}`);
   return response.json();
@@ -32,9 +33,7 @@ export const getEvents = async (username, role) => {
 export const createEvent = async (eventData) => {
   const response = await fetch(`${API_URL}/events`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(eventData),
   });
   return response.json();
@@ -43,9 +42,7 @@ export const createEvent = async (eventData) => {
 export const updateEvent = async (eventId, eventData) => {
   const response = await fetch(`${API_URL}/events/${eventId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(eventData),
   });
   return response.json();
@@ -58,94 +55,30 @@ export const deleteEvent = async (eventId) => {
   return response.json();
 };
 
-// Admin endpoints
+// ------------------ ADMIN USERS ------------------
+
 export const getUsers = async () => {
-  try {
-    // 1. Check for session token
-    const sessionToken = localStorage.getItem('adminSessionToken');
-    if (!sessionToken) {
-      throw new Error('ADMIN_SESSION_EXPIRED');
+  const response = await fetch(`${API_URL}/admin/users`, {
+    method: 'GET',
+    headers: {
+      'x-admin-secret': adminSecret,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
     }
+  });
 
-    // 2. Make API request
-    const response = await fetch(`${API_URL}/admin/users`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${sessionToken}`,
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest' // Helps identify AJAX requests
-      },
-      credentials: 'include'
-    });
-
-    // 3. Handle HTTP errors
-    if (!response.ok) {
-      let errorData = {};
-      try {
-        errorData = await response.json();
-      } catch (parseError) {
-        console.warn('Failed to parse error response:', parseError);
-      }
-
-      // Clear invalid token if auth failed
-      if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('adminSessionToken');
-        throw new Error(errorData.message || 'Admin access denied. Please log in again.');
-      }
-
-      // Handle other HTTP errors
-      throw new Error(
-        errorData.message || 
-        `Server responded with status ${response.status}`
-      );
-    }
-
-    // 4. Parse and validate response data
-    let data;
+  if (!response.ok) {
+    let errorData;
     try {
-      data = await response.json();
-    } catch (parseError) {
-      throw new Error('Failed to parse server response');
+      errorData = await response.json();
+    } catch {
+      throw new Error(`Server responded with status ${response.status}`);
     }
-
-    // Validate data structure
-    if (!Array.isArray(data)) {
-      throw new Error('Invalid response format: Expected array of users');
-    }
-
-    // Validate user objects (optional)
-    if (data.length > 0) {
-      const requiredFields = ['username', 'email', 'role'];
-      const isValid = data.every(user => 
-        requiredFields.every(field => user.hasOwnProperty(field))
-      );
-      
-      if (!isValid) {
-        console.warn('Malformed user data:', data);
-        throw new Error('Server returned incomplete user data');
-      }
-    }
-
-    return data;
-
-  } catch (error) {
-    console.error('Failed to fetch users:', error);
-    
-    // Enhance specific error messages
-    switch (true) {
-      case error.message === 'ADMIN_SESSION_EXPIRED':
-        throw new Error('Your session has expired. Please log in again.');
-      
-      case error.message.includes('Failed to fetch'):
-        throw new Error('Network error. Please check your internet connection.');
-      
-      case error.message.includes('NetworkError'):
-        throw new Error('Cannot connect to server. Please try again later.');
-      
-      default:
-        throw error; // Re-throw original error
-    }
+    throw new Error(errorData.message || 'Failed to fetch users');
   }
+
+  const data = await response.json();
+  return data;
 };
 
 export const updateUserRole = async (username, role) => {
@@ -153,7 +86,7 @@ export const updateUserRole = async (username, role) => {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
     body: JSON.stringify({ role }),
   });
@@ -164,33 +97,34 @@ export const deleteUser = async (username) => {
   const response = await fetch(`${API_URL}/admin/users/${username}`, {
     method: 'DELETE',
     headers: {
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
   });
   return response.json();
 };
 
+// ------------------ ADMIN EVENTS ------------------
 
-// Add to your api.js file (with other admin endpoints)
 export const bulkEventAction = async (actionType, eventIds) => {
   const response = await fetch(`${API_URL}/admin/events/bulk`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
     body: JSON.stringify({ actionType, eventIds }),
   });
   return response.json();
 };
 
-// Announcements
+// ------------------ ANNOUNCEMENTS ------------------
+
 export const createAnnouncement = async (announcement) => {
   const response = await fetch(`${API_URL}/announcements`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
     body: JSON.stringify(announcement),
   });
@@ -202,7 +136,8 @@ export const getAnnouncements = async () => {
   return response.json();
 };
 
-// Categories
+// ------------------ CATEGORIES ------------------
+
 export const getCategories = async () => {
   const response = await fetch(`${API_URL}/categories`);
   return response.json();
@@ -213,28 +148,30 @@ export const createCategory = async (category) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
     body: JSON.stringify(category),
   });
   return response.json();
 };
 
-// Analytics
+// ------------------ ANALYTICS ------------------
+
 export const getEventAnalytics = async (timeRange) => {
   const response = await fetch(`${API_URL}/analytics/events?range=${timeRange}`, {
     headers: {
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
   });
   return response.json();
 };
 
-// Export
+// ------------------ EXPORT ------------------
+
 export const exportEventsExcel = async () => {
   const response = await fetch(`${API_URL}/export/events/excel`, {
     headers: {
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
   });
   return response.blob();
@@ -243,7 +180,7 @@ export const exportEventsExcel = async () => {
 export const exportEventsPDF = async () => {
   const response = await fetch(`${API_URL}/export/events/pdf`, {
     headers: {
-      'X-Admin-Token': localStorage.getItem('adminToken'),
+      'x-admin-secret': adminSecret
     },
   });
   return response.blob();
