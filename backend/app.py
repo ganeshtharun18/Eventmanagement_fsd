@@ -19,7 +19,7 @@ app = Flask(__name__)
 CORS(app, resources={
     r"/api/*": {
         "origins": ["http://localhost:3000"], 
-        "allow_headers": ["x-admin-secret", "Content-Type"],
+        "allow_headers": ["x-admin-secret","x-username", "Content-Type"],
         "methods": ["GET", "POST"]
     }
 })
@@ -382,52 +382,63 @@ def delete_user(username):
     return jsonify({'success': True, 'message': 'User deleted'})
 
 # Announcements Endpoints
+# POST: Create Announcement (Only Admin)
+def is_admin(request):
+    return request.headers.get('x-admin-secret') == ADMIN_SECRET
+
+
+# Utility: Get current user (optional improvement)
+def get_current_user(request):
+    return request.headers.get('x-username') or "admin"  # Fallback for testing
+
+
+# POST: Create Announcement (Admin only)
 @app.route('/api/announcements', methods=['POST'])
 def create_announcement():
     if not is_admin(request):
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     data = request.get_json()
-    if not data.get('title') or not data.get('content'):
+    if not data or not data.get('title') or not data.get('content'):
         return jsonify({'error': 'Title and content required'}), 400
-    
+
+    created_by = get_current_user(request)
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT INTO announcements (title, content, created_by)
-    VALUES (?, ?, ?)
-    """, (data['title'], data['content'], get_current_user(request)))
+        INSERT INTO announcements (title, content, created_by)
+        VALUES (?, ?, ?)
+    """, (data['title'], data['content'], created_by))
     
     announcement_id = cursor.lastrowid
-    
-    # Send to all users
-    cursor.execute("SELECT email FROM users WHERE email IS NOT NULL")
-    recipients = [row[0] for row in cursor.fetchall()]
-    
     conn.commit()
     conn.close()
-    
-    # Send emails (pseudo-code)
-    if SENDGRID_API_KEY and recipients:
-        send_announcement_emails(data['title'], data['content'], recipients)
-    
+
     return jsonify({
         'success': True,
-        'message': 'Announcement created and sent',
-        'id': announcement_id
+        'message': 'Announcement created successfully',
+        'id': announcement_id,
+        'title': data['title'],
+        'content': data['content'],
+        'created_by': created_by
     })
 
+
+# GET: Fetch Recent Announcements (Everyone)
 @app.route('/api/announcements', methods=['GET'])
 def get_announcements():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("""
-    SELECT a.*, u.username 
-    FROM announcements a
-    JOIN users u ON a.created_by = u.username
-    ORDER BY a.created_at DESC
-    LIMIT 10
+        SELECT a.id, a.title, a.content, a.created_at,
+               COALESCE(u.username, a.created_by) AS creator
+        FROM announcements a
+        LEFT JOIN users u ON a.created_by = u.username
+        ORDER BY a.created_at DESC
+        LIMIT 10
     """)
+    
     announcements = []
     for row in cursor.fetchall():
         announcements.append({
@@ -438,7 +449,9 @@ def get_announcements():
             'created_by': row[4]
         })
     conn.close()
+
     return jsonify(announcements)
+
 
 # Categories Endpoints
 @app.route('/api/categories', methods=['GET'])

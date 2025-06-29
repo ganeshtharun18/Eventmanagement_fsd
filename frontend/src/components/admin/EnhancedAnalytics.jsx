@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
-         XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import { getEventAnalytics } from '../../services/api';
 import './EnhancedAnalytics.css';
 
@@ -14,12 +16,14 @@ const EnhancedAnalytics = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const analytics = await getEventAnalytics(timeRange);
-        setData(analytics);
-        setLoading(false);
+        setData(analytics || {}); // fallback to empty object
       } catch (err) {
-        setError(err.message);
+        setError(err.message || 'Failed to load analytics');
+      } finally {
         setLoading(false);
       }
     };
@@ -30,14 +34,17 @@ const EnhancedAnalytics = () => {
   if (error) return <div className="error">{error}</div>;
   if (!data) return <div>No data available</div>;
 
+  // Ensure fallbacks for arrays to prevent map errors
+  const eventsByTime = Array.isArray(data.events_by_time) ? data.events_by_time : [];
+  const topUsers = Array.isArray(data.top_users) ? data.top_users : [];
+  const categoryStats = Array.isArray(data.category_stats) ? data.category_stats : [];
+  const locationStats = Array.isArray(data.location_stats) ? data.location_stats : [];
+
   return (
     <div className="enhanced-analytics">
       <div className="controls">
         <h2>Event Analytics</h2>
-        <select 
-          value={timeRange} 
-          onChange={(e) => setTimeRange(e.target.value)}
-        >
+        <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
@@ -48,15 +55,15 @@ const EnhancedAnalytics = () => {
       <div className="stats-summary">
         <div className="stat-card">
           <h3>Total Events</h3>
-          <p>{data.total_events}</p>
+          <p>{data.total_events ?? 'N/A'}</p>
         </div>
         <div className="stat-card">
           <h3>Active Users</h3>
-          <p>{data.total_users}</p>
+          <p>{data.total_users ?? 'N/A'}</p>
         </div>
         <div className="stat-card">
           <h3>Categories Used</h3>
-          <p>{data.total_categories}</p>
+          <p>{data.total_categories ?? 'N/A'}</p>
         </div>
       </div>
 
@@ -64,7 +71,7 @@ const EnhancedAnalytics = () => {
         <div className="chart-container">
           <h3>Events by {timeRange}</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.events_by_time}>
+            <BarChart data={eventsByTime}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="period" />
               <YAxis />
@@ -78,7 +85,7 @@ const EnhancedAnalytics = () => {
         <div className="chart-container">
           <h3>Top Users</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data.top_users}>
+            <LineChart data={topUsers}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="username" />
               <YAxis />
@@ -96,7 +103,7 @@ const EnhancedAnalytics = () => {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={data.category_stats}
+                data={categoryStats}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -104,10 +111,15 @@ const EnhancedAnalytics = () => {
                 fill="#8884d8"
                 dataKey="count"
                 nameKey="name"
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
               >
-                {data.category_stats.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {categoryStats.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -118,7 +130,7 @@ const EnhancedAnalytics = () => {
         <div className="chart-container">
           <h3>Top Locations</h3>
           <ul className="location-list">
-            {data.location_stats.map((loc, index) => (
+            {locationStats.map((loc, index) => (
               <li key={index}>
                 <span>{loc.location}</span>
                 <span>{loc.count} events</span>

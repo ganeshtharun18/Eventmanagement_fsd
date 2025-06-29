@@ -119,22 +119,49 @@ export const bulkEventAction = async (actionType, eventIds) => {
 
 // ------------------ ANNOUNCEMENTS ------------------
 
+//const API_URL = 'http://localhost:5000/api';
+
+// Hardcoded admin secret (for demo; secure this in production)
+//const adminSecret = 'supersecretkey123';
+
+// Create an announcement (only Admins allowed)
+
 export const createAnnouncement = async (announcement) => {
   const response = await fetch(`${API_URL}/announcements`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-admin-secret': adminSecret
+      'x-admin-secret': adminSecret,
+      'x-username': announcement.created_by || "admin" // optional
     },
     body: JSON.stringify(announcement),
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create announcement');
+  }
+
   return response.json();
 };
 
+
+// Get recent announcements
 export const getAnnouncements = async () => {
-  const response = await fetch(`${API_URL}/announcements`);
-  return response.json();
+  try {
+    const response = await fetch(`${API_URL}/announcements`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch announcements');
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error('Error in getAnnouncements:', err);
+    return [];
+  }
 };
+
 
 // ------------------ CATEGORIES ------------------
 

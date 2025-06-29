@@ -7,24 +7,47 @@ const Announcements = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
+  // Fetch recent announcements on mount
+  const fetchAnnouncements = async () => {
+    try {
       const data = await getAnnouncements();
       setAnnouncements(data);
-    };
+    } catch (err) {
+      console.error('Failed to fetch announcements:', err);
+      setError('Failed to load announcements.');
+    }
+  };
+
+  useEffect(() => {
     fetchAnnouncements();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await createAnnouncement({ title, content });
-    const data = await getAnnouncements();
-    setAnnouncements(data);
-    setTitle('');
-    setContent('');
-    setLoading(false);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await createAnnouncement({ title, content });
+
+      if (response.success) {
+        setSuccess('Announcement posted successfully!');
+        setTitle('');
+        setContent('');
+        fetchAnnouncements(); // Refresh list
+      } else {
+        setError(response.message || 'Failed to create announcement');
+      }
+    } catch (err) {
+      console.error('Create error:', err);
+      setError('Error sending announcement.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,14 +72,26 @@ const Announcements = () => {
         </button>
       </form>
 
+      {error && <p className="error-msg">{error}</p>}
+      {success && <p className="success-msg">{success}</p>}
+
       <h3>Recent Announcements</h3>
-      {announcements.map(ann => (
-        <div key={ann.id} className="announcement">
-          <h4>{ann.title}</h4>
-          <p>{ann.content}</p>
-          <small>Posted by {ann.created_by} on {new Date(ann.created_at).toLocaleString()}</small>
-        </div>
-      ))}
+      {announcements.length === 0 ? (
+        <p>No announcements yet.</p>
+      ) : (
+        announcements.map((ann) => (
+          <div key={ann.id} className="announcement">
+            <h4>{ann.title}</h4>
+            <p>{ann.content}</p>
+            <small>
+              Posted by {ann.created_by ?? 'Unknown'} on{' '}
+              {ann.created_at
+                ? new Date(ann.created_at).toLocaleString()
+                : 'Unknown time'}
+            </small>
+          </div>
+        ))
+      )}
     </div>
   );
 };
