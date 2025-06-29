@@ -16,7 +16,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:3000"], 
+        "allow_headers": ["x-admin-secret", "Content-Type"],
+        "methods": ["GET", "POST"]
+    }
+})
 
 
 # Configuration
@@ -24,6 +30,9 @@ DB_NAME = "event_management.db"
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 ADMIN_SECRET = os.getenv('ADMIN_SECRET')
+
+# In app.py (temporarily add this)
+print(f"!!! DEBUG: ADMIN_SECRET = '{ADMIN_SECRET}'")  # Check if it matches your expectation
 
 # Database setup
 def create_tables():
@@ -303,17 +312,29 @@ def delete_event(event_id):
     return jsonify({'success': True, 'message': 'Event deleted successfully'})
 
 # Admin Endpoints
-@app.route('/api/admin/users', methods=['GET'])
-def get_all_users():
-    if not is_admin(request):
-        return jsonify({'error': 'Unauthorized'}), 403
+@app.route('/api/admin/users')
+def admin_users():
+    expected_secret = os.getenv('ADMIN_SECRET')
+    received_secret = request.headers.get('X-Admin-Secret')
     
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("SELECT username, role, email FROM users")
-    users = [{'username': row[0], 'role': row[1], 'email': row[2]} for row in cursor.fetchall()]
-    conn.close()
-    return jsonify(users)
+    print(f"🔑 Expected: {expected_secret}")
+    print(f"📩 Received: {received_secret}")
+    
+    if received_secret != expected_secret:
+        return jsonify({"error": "Invalid admin secret"}), 403
+    
+    conn = None  # Initialize conn outside try block
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT username, role, email FROM users")
+        users = [{'username': row[0], 'role': row[1], 'email': row[2]} for row in cursor.fetchall()]
+        return jsonify(users)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:  # Only close if conn was successfully created
+            conn.close()
 
 @app.route('/api/admin/users/<username>', methods=['PUT'])
 def update_user_role(username):
