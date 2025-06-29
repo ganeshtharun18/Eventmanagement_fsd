@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { login } from '../../services/api';
+import { login } from '../../services/api'; // Call your updated login API
 import './AuthForms.css';
 
 const Login = ({ onLoginSuccess }) => {
@@ -7,6 +7,7 @@ const Login = ({ onLoginSuccess }) => {
     username: '',
     password: ''
   });
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,20 +23,23 @@ const Login = ({ onLoginSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await login(credentials);
+
       if (response.success) {
+        // No token passed anymore
         onLoginSuccess({
           username: response.username,
-          role: response.role,
-          token: 'mock-token' // In real app, you'd get this from the response
+          role: response.role
         });
       } else {
         setError(response.error || 'Invalid credentials');
       }
+
     } catch (err) {
-      setError('An error occurred during login');
+      console.error('Login error:', err);
+      setError('An error occurred during login. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -44,12 +48,13 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
       <h3>Login</h3>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <div className="form-group">
-        <label>Username</label>
+        <label htmlFor="username">Username</label>
         <input
+          id="username"
           type="text"
           name="username"
           value={credentials.username}
@@ -57,10 +62,11 @@ const Login = ({ onLoginSuccess }) => {
           required
         />
       </div>
-      
+
       <div className="form-group">
-        <label>Password</label>
+        <label htmlFor="password">Password</label>
         <input
+          id="password"
           type="password"
           name="password"
           value={credentials.password}
@@ -68,7 +74,7 @@ const Login = ({ onLoginSuccess }) => {
           required
         />
       </div>
-      
+
       <button type="submit" disabled={loading}>
         {loading ? 'Logging in...' : 'Login'}
       </button>
