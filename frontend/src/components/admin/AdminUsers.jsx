@@ -9,25 +9,21 @@ const AdminUsers = () => {
     error: null,
     updating: false,
     deletingId: null,
-    retryCount: 0 // Added retry counter
+    retryCount: 0
   });
 
-  // Enhanced fetch function with retry logic
+  // Fetch users with retry logic
   const fetchUsers = async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      
+
       const data = await getUsers();
-      
+
       if (!Array.isArray(data)) {
         throw new Error('Invalid data format: Expected array of users');
       }
 
-      // Additional data validation
-      const isValid = data.every(user => 
-        user.username && user.email && user.role
-      );
-      
+      const isValid = data.every(user => user.username && user.email && user.role);
       if (!isValid) {
         throw new Error('Some users are missing required fields');
       }
@@ -41,8 +37,7 @@ const AdminUsers = () => {
       }));
     } catch (err) {
       console.error('Fetch users error:', err);
-      
-      // Retry logic (max 3 times)
+
       if (state.retryCount < 3) {
         setTimeout(() => {
           setState(prev => ({
@@ -64,48 +59,42 @@ const AdminUsers = () => {
     fetchUsers();
   }, [state.retryCount]);
 
+  // Handle role change
   const handleRoleChange = async (username, newRole) => {
     if (state.updating) return;
-    
+
     setState(prev => ({ ...prev, updating: true, error: null }));
-    
+
     try {
-      // Optimistic update
-      const updatedUsers = state.users.map(user => 
+      const updatedUsers = state.users.map(user =>
         user.username === username ? { ...user, role: newRole } : user
       );
-      
+
       setState(prev => ({ ...prev, users: updatedUsers }));
-      
-      // API call
+
       await updateUserRole(username, newRole);
-      
-      setState(prev => ({
-        ...prev,
-        updating: false
-      }));
+
+      setState(prev => ({ ...prev, updating: false }));
     } catch (err) {
       console.error('Update role error:', err);
-      
-      // Revert on error
       setState(prev => ({
         ...prev,
-        users: state.users, // Revert to original
         updating: false,
         error: err.message || 'Failed to update user role'
       }));
     }
   };
 
+  // Handle delete user
   const handleDeleteUser = async (username) => {
     if (!window.confirm(`Are you sure you want to permanently delete ${username}?`)) return;
     if (state.deletingId) return;
 
     setState(prev => ({ ...prev, deletingId: username, error: null }));
-    
+
     try {
       await deleteUser(username);
-      
+
       setState(prev => ({
         ...prev,
         users: prev.users.filter(user => user.username !== username),
@@ -113,7 +102,6 @@ const AdminUsers = () => {
       }));
     } catch (err) {
       console.error('Delete user error:', err);
-      
       setState(prev => ({
         ...prev,
         deletingId: null,
@@ -123,43 +111,47 @@ const AdminUsers = () => {
   };
 
   // Loading state
-  if (state.loading) return (
-    <div className="loading-container">
-      <div className="spinner"></div>
-      <p>Loading users...{state.retryCount > 0 && ` (Attempt ${state.retryCount + 1})`}</p>
-    </div>
-  );
+  if (state.loading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading users...{state.retryCount > 0 && ` (Attempt ${state.retryCount + 1})`}</p>
+      </div>
+    );
+  }
 
   // Error state
-  if (state.error) return (
-    <div className="error-container">
-      <p className="error-message">{state.error}</p>
-      <div className="error-actions">
-        <button 
-          className="retry-btn"
-          onClick={() => setState(prev => ({ ...prev, retryCount: prev.retryCount + 1 }))}
-        >
-          Retry
-        </button>
-        <button 
-          className="refresh-btn"
-          onClick={() => window.location.reload()}
-        >
-          Refresh Page
-        </button>
+  if (state.error) {
+    return (
+      <div className="error-container">
+        <p className="error-message">{state.error}</p>
+        <div className="error-actions">
+          <button
+            className="retry-btn"
+            onClick={() =>
+              setState(prev => ({ ...prev, retryCount: prev.retryCount + 1 }))
+            }
+          >
+            Retry
+          </button>
+          <button className="refresh-btn" onClick={() => window.location.reload()}>
+            Refresh Page
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
+  // Main render
   return (
     <div className="admin-users-container">
       <header className="admin-header">
         <h2>User Management</h2>
         <div className="header-info">
           <p className="user-count">
-            {state.users.length} user{state.users.length !== 1 ? 's' : ''} found
+            {state.users.length} user{state.users.length !== 1 ? 's' : ''}
           </p>
-          <button 
+          <button
             className="refresh-btn"
             onClick={fetchUsers}
             disabled={state.updating || state.deletingId}
@@ -182,19 +174,18 @@ const AdminUsers = () => {
           <tbody>
             {state.users.length > 0 ? (
               state.users.map(user => (
-                <tr 
-                  key={user.username} 
-                  className={`
-                    ${state.deletingId === user.username ? 'deleting' : ''}
-                    ${user.role.toLowerCase()}
-                  `}
+                <tr
+                  key={user.username}
+                  className={`${state.deletingId === user.username ? 'deleting' : ''} ${user.role.toLowerCase()}`}
                 >
                   <td>{user.username}</td>
                   <td>{user.email || 'N/A'}</td>
                   <td>
                     <select
                       value={user.role}
-                      onChange={(e) => handleRoleChange(user.username, e.target.value)}
+                      onChange={(e) =>
+                        handleRoleChange(user.username, e.target.value)
+                      }
                       disabled={state.updating || state.deletingId}
                     >
                       <option value="User">User</option>
@@ -205,7 +196,9 @@ const AdminUsers = () => {
                   </td>
                   <td>
                     <button
-                      className={`delete-btn ${state.deletingId === user.username ? 'processing' : ''}`}
+                      className={`delete-btn ${
+                        state.deletingId === user.username ? 'processing' : ''
+                      }`}
                       onClick={() => handleDeleteUser(user.username)}
                       disabled={state.updating || state.deletingId}
                     >
