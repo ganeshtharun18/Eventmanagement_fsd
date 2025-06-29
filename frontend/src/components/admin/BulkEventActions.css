@@ -1,0 +1,240 @@
+/* BulkEventActions.css */
+
+/* Base Styles */
+.bulk-actions {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+}
+
+.bulk-actions h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.bulk-actions h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #3498db, #9b59b6);
+  border-radius: 4px;
+}
+
+.bulk-actions h3 {
+  color: #34495e;
+  margin: 1.5rem 0 1rem;
+  font-size: 1.3rem;
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fee;
+  color: #e74c3c;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #e74c3c;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.error-message::before {
+  content: '⚠';
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* Action Controls */
+.action-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.action-controls select,
+.action-controls input {
+  padding: 0.8rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.3s;
+  min-width: 200px;
+}
+
+.action-controls select:focus,
+.action-controls input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.action-controls button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.8rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+}
+
+.action-controls button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2980b9, #3498db);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(41, 128, 185, 0.3);
+}
+
+.action-controls button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Events Grid */
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.event-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.event-card.selected {
+  border-color: #3498db;
+  background-color: #f0f8ff;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+}
+
+.event-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #3498db;
+  color: white;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom-left-radius: 8px;
+}
+
+.event-card h4 {
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.event-card p {
+  color: #7f8c8d;
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Loading State */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.loading-text {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #95a5a6;
+  font-style: italic;
+  grid-column: 1 / -1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bulk-actions {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .action-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .action-controls select,
+  .action-controls input,
+  .action-controls button {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .events-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animation for cards */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.event-card {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Selection counter */
+.selection-counter {
+  background-color: #3498db;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 1rem;
+  display: inline-block;
+}

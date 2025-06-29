@@ -1,0 +1,121 @@
+/* Reminders.css */
+
+.reminders-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.reminders-container h3 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f2f5;
+}
+
+.reminders-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.reminder-item {
+  padding: 1.5rem;
+  background-color: #f9fafc;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reminder-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+}
+
+.reminder-item h4 {
+  color: #2c3e50;
+  margin: 0 0 0.75rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.reminder-item p {
+  color: #4a5568;
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.reminder-item p strong {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* Loading and empty states */
+.reminders-container > div:not(.reminders-list) {
+  text-align: center;
+  padding: 2rem;
+  color: #718096;
+  font-size: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+/* Notification permission prompt */
+.notification-prompt {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  color: #1976d2;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notification-prompt button {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.notification-prompt button:hover {
+  background-color: #1565c0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .reminders-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .reminder-item {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .reminders-container {
+    padding: 1rem;
+  }
+  
+  .reminder-item h4 {
+    font-size: 1.1rem;
+  }
+  
+  .reminder-item p {
+    font-size: 0.9rem;
+  }
+}

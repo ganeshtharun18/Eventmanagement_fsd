@@ -1,0 +1,228 @@
+/* EnhancedAnalytics.css */
+
+/* Base Styles */
+.enhanced-analytics {
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  color: #333;
+}
+
+/* Controls Section */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.controls h2 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.controls select {
+  padding: 0.6rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 1rem;
+  color: #444;
+  transition: all 0.3s;
+}
+
+.controls select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+/* Stats Summary */
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+  color: #7f8c8d;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card p {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+/* Chart Containers */
+.chart-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.chart-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.chart-container h3 {
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Location List */
+.location-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.location-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.location-list li:last-child {
+  border-bottom: none;
+}
+
+.location-list li span:first-child {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.location-list li span:last-child {
+  color: #7f8c8d;
+  background: #f5f5f5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+/* Loading and Error States */
+.loading,
+.error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: #e74c3c;
+  background: #fee;
+  border-radius: 8px;
+  border-left: 4px solid #e74c3c;
+}
+
+/* Recharts Customization */
+.recharts-tooltip {
+  background: white !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.recharts-legend-item-text {
+  color: #666 !important;
+}
+
+.recharts-cartesian-axis-tick-value {
+  font-size: 0.85rem !important;
+  fill: #666 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .enhanced-analytics {
+    padding: 1rem;
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .controls select {
+    width: 100%;
+  }
+  
+  .stats-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chart-container {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Custom Scrollbar for location list */
+.location-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.location-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.location-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.location-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+.location-list::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
