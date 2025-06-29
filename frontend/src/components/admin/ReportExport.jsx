@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { exportEventsExcel, exportEventsPDF } from '../../services/api';
 import './ReportExport.css';
@@ -13,22 +12,34 @@ const ReportExport = () => {
     
     try {
       let blob;
+      let mimeType = '';
+      let filename = '';
+
       if (format === 'excel') {
         blob = await exportEventsExcel();
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        filename = 'events.xlsx';
       } else {
         blob = await exportEventsPDF();
+        mimeType = 'application/pdf';
+        filename = 'events.pdf';
       }
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `events.${format}`;
-      document.body.appendChild(a);
-      a.click();
+
+      // Ensure blob is readable by the browser
+      const blobFile = new Blob([blob], { type: mimeType });
+      const url = window.URL.createObjectURL(blobFile);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+
     } catch (err) {
-      setError(err.message);
+      console.error('Export error:', err);
+      setError('Failed to export file. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -43,22 +54,16 @@ const ReportExport = () => {
       <div className="export-options">
         <div className="export-option">
           <h3>Export to Excel</h3>
-          <p>Export all events data to an Excel spreadsheet</p>
-          <button 
-            onClick={() => handleExport('excel')}
-            disabled={loading}
-          >
+          <p>Download all events as an Excel file</p>
+          <button onClick={() => handleExport('excel')} disabled={loading}>
             {loading ? 'Exporting...' : 'Export Excel'}
           </button>
         </div>
-        
+
         <div className="export-option">
           <h3>Export to PDF</h3>
-          <p>Export all events data to a PDF document</p>
-          <button 
-            onClick={() => handleExport('pdf')}
-            disabled={loading}
-          >
+          <p>Download all events as a PDF document</p>
+          <button onClick={() => handleExport('pdf')} disabled={loading}>
             {loading ? 'Exporting...' : 'Export PDF'}
           </button>
         </div>

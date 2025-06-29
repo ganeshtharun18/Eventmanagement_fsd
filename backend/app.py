@@ -562,30 +562,30 @@ def get_event_analytics():
     })
 
 # Export Endpoints
+
 @app.route('/api/export/events/excel', methods=['GET'])
 def export_events_excel():
     if not is_admin(request):
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     conn = sqlite3.connect(DB_NAME)
-    df = pd.read_sql("""
-    SELECT e.ID, e.Name, e.Description, e.Date, e.Time, e.Location, u.username,
-           GROUP_CONCAT(c.name) as categories
-    FROM events e
-    JOIN users u ON e.username = u.username
-    LEFT JOIN event_categories ec ON e.ID = ec.event_id
-    LEFT JOIN categories c ON ec.category_id = c.id
-    GROUP BY e.ID
+    df = pd.read_sql_query("""
+        SELECT e.ID, e.Name, e.Description, e.Date, e.Time, e.Location, u.username as Organizer,
+               GROUP_CONCAT(c.name) as Categories
+        FROM events e
+        JOIN users u ON e.username = u.username
+        LEFT JOIN event_categories ec ON e.ID = ec.event_id
+        LEFT JOIN categories c ON ec.category_id = c.id
+        GROUP BY e.ID
     """, conn)
     conn.close()
-    
+
     output = BytesIO()
-    writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    df.to_excel(writer, sheet_name='Events', index=False)
-    writer.save()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Events')
     output.seek(0)
-    
-    response = make_response(output.getvalue())
+
+    response = make_response(output.read())
     response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     response.headers['Content-Disposition'] = 'attachment; filename=events.xlsx'
     return response
@@ -594,42 +594,39 @@ def export_events_excel():
 def export_events_pdf():
     if not is_admin(request):
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("""
-    SELECT e.ID, e.Name, e.Date, e.Time, e.Location, u.username
-    FROM events e
-    JOIN users u ON e.username = u.username
-    ORDER BY e.Date
+        SELECT e.ID, e.Name, e.Date, e.Time, e.Location, u.username
+        FROM events e
+        JOIN users u ON e.username = u.username
+        ORDER BY e.Date
     """)
     events = cursor.fetchall()
     conn.close()
-    
+
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
-    
     data = [['ID', 'Name', 'Date', 'Time', 'Location', 'Organizer']]
-    for event in events:
-        data.append([str(event[0]), event[1], event[2], event[3], event[4], event[5]])
-    
+    data.extend([list(map(str, row)) for row in events])
+
     table = Table(data)
-    style = TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.grey),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 10),
-        ('BOTTOMPADDING', (0,0), (-1,0), 12),
-        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
-        ('GRID', (0,0), (-1,-1), 1, colors.black)
-    ])
-    table.setStyle(style)
-    
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
     doc.build([table])
     buffer.seek(0)
-    
-    response = make_response(buffer.getvalue())
+
+    response = make_response(buffer.read())
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=events.pdf'
     return response

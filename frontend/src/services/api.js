@@ -196,19 +196,41 @@ export const getEventAnalytics = async (timeRange) => {
 // ------------------ EXPORT ------------------
 
 export const exportEventsExcel = async () => {
-  const response = await fetch(`${API_URL}/export/events/excel`, {
-    headers: {
-      'x-admin-secret': adminSecret
-    },
-  });
-  return response.blob();
+  try {
+    const response = await fetch(`${API_URL}/export/events/excel`, {
+      method: 'GET',
+      headers: {
+        'x-admin-secret': adminSecret
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Excel export failed: ${response.statusText}`);
+    }
+
+    return await response.blob(); // Return Excel file blob
+  } catch (error) {
+    console.error('Error exporting Excel:', error);
+    throw error;
+  }
 };
 
 export const exportEventsPDF = async () => {
-  const response = await fetch(`${API_URL}/export/events/pdf`, {
-    headers: {
-      'x-admin-secret': adminSecret
-    },
-  });
-  return response.blob();
+  try {
+    const response = await fetch(`${API_URL}/export/events/pdf`, {
+      method: 'GET',
+      headers: {
+        'x-admin-secret': adminSecret
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`PDF export failed: ${response.statusText}`);
+    }
+
+    return await response.blob(); // Return PDF file blob
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    throw error;
+  }
 };
