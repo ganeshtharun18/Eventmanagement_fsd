@@ -42,16 +42,34 @@ export const createEvent = async (eventData) => {
 export const updateEvent = async (eventId, eventData) => {
   const response = await fetch(`${API_URL}/events/${eventId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-secret': adminSecret
+    },
     body: JSON.stringify(eventData),
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update event');
+  }
+
   return response.json();
 };
 
 export const deleteEvent = async (eventId) => {
   const response = await fetch(`${API_URL}/events/${eventId}`, {
     method: 'DELETE',
+    headers: {
+      'x-admin-secret': adminSecret
+    },
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to delete event');
+  }
+
   return response.json();
 };
 
@@ -94,28 +112,42 @@ export const updateUserRole = async (username, role) => {
 };
 
 export const deleteUser = async (username) => {
-  const response = await fetch(`${API_URL}/admin/users/${username}`, {
-    method: 'DELETE',
-    headers: {
-      'x-admin-secret': adminSecret
-    },
-  });
-  return response.json();
+  try {
+    const response = await fetch(`${API_URL}/admin/users/${username}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-secret': adminSecret
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to delete user');
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error("Delete user failed:", err.message);
+    throw err;
+  }
 };
+
 
 // ------------------ ADMIN EVENTS ------------------
 
-export const bulkEventAction = async (actionType, eventIds) => {
+export const bulkEventAction = async (data) => {
   const response = await fetch(`${API_URL}/admin/events/bulk`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-admin-secret': adminSecret
+      'x-admin-secret': adminSecret,
     },
-    body: JSON.stringify({ actionType, eventIds }),
+    body: JSON.stringify(data),
   });
   return response.json();
 };
+
 
 // ------------------ ANNOUNCEMENTS ------------------
 
@@ -241,3 +273,5 @@ export const getUpcomingEvents = async (username) => {
   if (!response.ok) throw new Error('Failed to fetch upcoming events');
   return response.json();
 };
+
+

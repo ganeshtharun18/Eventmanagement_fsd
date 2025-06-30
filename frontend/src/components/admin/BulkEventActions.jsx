@@ -16,7 +16,7 @@ const BulkEventActions = () => {
         const data = await getEvents('', 'Admin'); // Get all events for admin
         setEvents(data);
       } catch (err) {
-        setError(err.message);
+        setError(err.message || 'Failed to fetch events');
       }
     };
     fetchEvents();
@@ -36,6 +36,11 @@ const BulkEventActions = () => {
       return;
     }
 
+    if (action === 'update' && !newLocation.trim()) {
+      setError('New location cannot be empty');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -48,13 +53,15 @@ const BulkEventActions = () => {
 
       if (response.success) {
         alert(`Successfully ${action}d ${response.affected} events`);
-        // Refresh events
         const data = await getEvents('', 'Admin');
         setEvents(data);
         setSelectedEvents([]);
+        setNewLocation('');
+      } else {
+        setError(response.message || 'Failed to perform bulk action');
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Error performing bulk action');
     } finally {
       setLoading(false);
     }
@@ -63,9 +70,9 @@ const BulkEventActions = () => {
   return (
     <div className="bulk-actions">
       <h2>Bulk Event Actions</h2>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <div className="action-controls">
         <select 
           value={action} 
@@ -74,7 +81,7 @@ const BulkEventActions = () => {
           <option value="delete">Delete Events</option>
           <option value="update">Update Location</option>
         </select>
-        
+
         {action === 'update' && (
           <input
             type="text"
@@ -83,7 +90,7 @@ const BulkEventActions = () => {
             onChange={(e) => setNewLocation(e.target.value)}
           />
         )}
-        
+
         <button 
           onClick={handleBulkAction}
           disabled={loading || selectedEvents.length === 0}
@@ -91,7 +98,7 @@ const BulkEventActions = () => {
           {loading ? 'Processing...' : 'Apply Action'}
         </button>
       </div>
-      
+
       <div className="events-list">
         <h3>Select Events</h3>
         <div className="events-grid">

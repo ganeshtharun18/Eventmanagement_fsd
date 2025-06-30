@@ -20,7 +20,7 @@ CORS(app, resources={
     r"/api/*": {
         "origins": ["http://localhost:3000"], 
         "allow_headers": ["x-admin-secret","x-username", "Content-Type"],
-        "methods": ["GET", "POST"]
+        "methods": ["GET", "POST","DELETE","OPTIONS","PUT"]
     }
 })
 
@@ -266,24 +266,31 @@ def add_event():
 
 @app.route('/api/events/<int:event_id>', methods=['PUT'])
 def update_event(event_id):
+    if not is_admin(request):
+        return jsonify({'error': 'Unauthorized'}), 403
+
     data = request.get_json()
-    
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
+
     cursor.execute("""
-    UPDATE events
-    SET Name = ?, Description = ?, Date = ?, Time = ?, Location = ?
-    WHERE ID = ?
+        UPDATE events
+        SET Name = ?, Description = ?, Date = ?, Time = ?, Location = ?
+        WHERE ID = ?
     """, (
-        data['name'],
-        data['description'],
-        data['date'],
-        data['time'],
-        data['location'],
+        data.get('name'),
+        data.get('description'),
+        data.get('date'),
+        data.get('time'),
+        data.get('location'),
         event_id
     ))
-    
+
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify({'error': 'Event not found'}), 404
+
     # Update categories
     if 'categories' in data:
         cursor.execute("DELETE FROM event_categories WHERE event_id = ?", (event_id,))
@@ -294,22 +301,33 @@ def update_event(event_id):
                     (event_id, category_id)
                 )
             except sqlite3.IntegrityError:
-                pass
-    
+                continue
+
     conn.commit()
     conn.close()
+
     return jsonify({'success': True, 'message': 'Event updated successfully'})
+
 
 @app.route('/api/events/<int:event_id>', methods=['DELETE'])
 def delete_event(event_id):
+    if not is_admin(request):
+        return jsonify({'error': 'Unauthorized'}), 403
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
+
     cursor.execute("DELETE FROM event_categories WHERE event_id = ?", (event_id,))
     cursor.execute("DELETE FROM events WHERE ID = ?", (event_id,))
+
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify({'error': 'Event not found'}), 404
+
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'message': 'Event deleted successfully'})
+
 
 # Admin Endpoints
 @app.route('/api/admin/users')
@@ -361,25 +379,30 @@ def update_user_role(username):
     
     conn.close()
     return jsonify({'success': True, 'message': 'User role updated'})
-
 @app.route('/api/admin/users/<username>', methods=['DELETE'])
 def delete_user(username):
     if not is_admin(request):
         return jsonify({'error': 'Unauthorized'}), 403
-    
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    
+
+    # Check if user exists first
+    cursor.execute("SELECT 1 FROM users WHERE username = ?", (username,))
+    user_exists = cursor.fetchone()
+
+    if not user_exists:
+        conn.close()
+        return jsonify({'error': 'User not found'}), 404
+
+    # Delete related events and then the user
     cursor.execute("DELETE FROM events WHERE username = ?", (username,))
     cursor.execute("DELETE FROM users WHERE username = ?", (username,))
     conn.commit()
-    
-    if cursor.rowcount == 0:
-        conn.close()
-        return jsonify({'error': 'User not found'}), 404
-    
     conn.close()
-    return jsonify({'success': True, 'message': 'User deleted'})
+
+    return jsonify({'success': True, 'message': f'User {username} and related events deleted'})
+
 
 # Announcements Endpoints
 # POST: Create Announcement (Only Admin)
@@ -727,6 +750,41 @@ def get_upcoming_events(username):
     
     conn.close()
     return jsonify(events)
+
+
+@app.route('/api/admin/events/bulk', methods=['POST', 'OPTIONS'])
+def bulk_event_action():
+    if request.method == 'OPTIONS':
+        return '', 204  # Handle preflight
+
+    if not is_admin(request):
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    data = request.get_json()
+    event_ids = data.get('event_ids', [])
+    action = data.get('action')
+
+    if not event_ids or action not in ['delete', 'update']:
+        return jsonify({'error': 'Invalid request'}), 400
+
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    if action == 'delete':
+        for event_id in event_ids:
+            cursor.execute("DELETE FROM event_categories WHERE event_id = ?", (event_id,))
+            cursor.execute("DELETE FROM events WHERE ID = ?", (event_id,))
+    elif action == 'update':
+        new_location = data.get('new_location')
+        if not new_location:
+            return jsonify({'error': 'New location required'}), 400
+        for event_id in event_ids:
+            cursor.execute("UPDATE events SET Location = ? WHERE ID = ?", (new_location, event_id))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True, 'affected': len(event_ids)})
 
 
 # Initialize database and start app
