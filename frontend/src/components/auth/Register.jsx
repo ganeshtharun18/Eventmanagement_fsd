@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { register } from '../../services/api';
 import './AuthForms.css';
 
 const Register = ({ onRegisterSuccess }) => {
+  const navigate = useNavigate();
+
   const [userData, setUserData] = useState({
     username: '',
     password: '',
     email: '',
     role: 'User'
   });
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,11 +32,16 @@ const Register = ({ onRegisterSuccess }) => {
     try {
       const response = await register(userData);
       if (response.success) {
-        onRegisterSuccess();
+        if (onRegisterSuccess) {
+          onRegisterSuccess();
+        } else {
+          navigate('/login'); // Default redirect after success
+        }
       } else {
         setError(response.error || 'Registration failed');
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError('An error occurred during registration');
     } finally {
       setLoading(false);
@@ -42,9 +51,9 @@ const Register = ({ onRegisterSuccess }) => {
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
       <h3>Register</h3>
-      
+
       {error && <div className="error-message">{error}</div>}
-      
+
       <div className="form-group">
         <label>Username</label>
         <input
@@ -55,7 +64,7 @@ const Register = ({ onRegisterSuccess }) => {
           required
         />
       </div>
-      
+
       <div className="form-group">
         <label>Email</label>
         <input
@@ -66,7 +75,7 @@ const Register = ({ onRegisterSuccess }) => {
           required
         />
       </div>
-      
+
       <div className="form-group">
         <label>Password</label>
         <input
@@ -77,7 +86,7 @@ const Register = ({ onRegisterSuccess }) => {
           required
         />
       </div>
-      
+
       <div className="form-group">
         <label>Role</label>
         <select
@@ -89,7 +98,7 @@ const Register = ({ onRegisterSuccess }) => {
           <option value="Admin">Admin</option>
         </select>
       </div>
-      
+
       <button type="submit" disabled={loading}>
         {loading ? 'Registering...' : 'Register'}
       </button>

@@ -1,16 +1,30 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   return (
     <nav className="navbar">
-      <Link to="/" className="logo">Event Management</Link>
-      <div className="nav-links">
-        <Link to="/">Home</Link>
-        <Link to="/user">User Dashboard</Link>
-        <Link to="/admin">Admin Dashboard</Link>
+      <div className="center-title">
+        Event Management System
       </div>
+
+      {user && (
+        <div className="nav-links">
+          <Link to="/">Home</Link>
+          {user.role === 'User' && <Link to="/user">User Dashboard</Link>}
+          {user.role === 'Admin' && <Link to="/admin">Admin Dashboard</Link>}
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
+        </div>
+      )}
     </nav>
   );
 };

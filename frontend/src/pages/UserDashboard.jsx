@@ -1,7 +1,6 @@
-// UserDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEvents } from '../services/api'; // Add this import
+import { getEvents } from '../services/api';
 import EventForm from '../components/common/EventForm';
 import EventList from '../components/common/EventList';
 import Reminders from '../components/common/Reminders';
@@ -13,13 +12,13 @@ const UserDashboard = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const username = localStorage.getItem('username');
-  const role = localStorage.getItem('role'); // Add role from localStorage
+  const role = localStorage.getItem('role');
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const data = await getEvents(username, role); // Use the imported getEvents
+        const data = await getEvents(username, role);
         setEvents(data);
         setLoading(false);
       } catch (error) {
@@ -28,9 +27,8 @@ const UserDashboard = () => {
       }
     };
 
-
     fetchEvents();
-  }, [username]);
+  }, [username, role]); // ✅ ESLint fix: include 'role'
 
   const handleLogout = () => {
     localStorage.clear();
@@ -48,59 +46,46 @@ const UserDashboard = () => {
   return (
     <div className="dashboard">
       <div className="sidebar">
-        <h2>User Dashboard</h2>
-        <p>Welcome, {username}</p>
-        
-        <div className="nav-links">
-          <button 
-            className={activeTab === 'events' ? 'active' : ''}
-            onClick={() => setActiveTab('events')}
-          >
-            My Events
-          </button>
-          <button 
-            className={activeTab === 'create' ? 'active' : ''}
-            onClick={() => setActiveTab('create')}
-          >
-            Create Event
-          </button>
-          <button 
-            className={activeTab === 'reminders' ? 'active' : ''}
-            onClick={() => setActiveTab('reminders')}
-          >
-            Reminders
-          </button>
-          <button 
-            className={activeTab === 'announcements' ? 'active' : ''}
-            onClick={() => setActiveTab('announcements')}
-          >
-            Announcements
-          </button>
+        <div>
+          <h2>User Dashboard</h2>
+          <p className="welcome-text">Welcome, <strong>{username}</strong></p>
+
+          <div className="nav-section">
+            <div className="nav-links-vertical">
+              <button className={activeTab === 'events' ? 'active' : ''} onClick={() => setActiveTab('events')}>
+                My Events
+              </button>
+              <button className={activeTab === 'create' ? 'active' : ''} onClick={() => setActiveTab('create')}>
+                Create Event
+              </button>
+              <button className={activeTab === 'reminders' ? 'active' : ''} onClick={() => setActiveTab('reminders')}>
+                Reminders
+              </button>
+              <button className={activeTab === 'announcements' ? 'active' : ''} onClick={() => setActiveTab('announcements')}>
+                Announcements
+              </button>
+
+              <button className="logout-btn under-announcements" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
-        
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
-        </button>
       </div>
 
       <div className="main-content">
         {activeTab === 'events' && (
-          <EventList 
-            events={events} 
-            loading={loading} 
-            onDelete={handleEventDeleted} 
-            isAdmin={false}
-          />
+          <EventList events={events} loading={loading} onDelete={handleEventDeleted} isAdmin={false} />
         )}
-        
+
         {activeTab === 'create' && (
           <EventForm onEventCreated={handleEventCreated} />
         )}
-        
+
         {activeTab === 'reminders' && (
           <Reminders username={username} />
         )}
-        
+
         {activeTab === 'announcements' && (
           <Announcements />
         )}

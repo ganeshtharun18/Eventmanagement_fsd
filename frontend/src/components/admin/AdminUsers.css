@@ -1,14 +1,13 @@
 /* AdminUsers.css */
 
-/* Base Styles */
 .admin-users-container {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   max-width: 1200px;
   margin: 2rem auto;
   padding: 1.5rem;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .admin-header {
@@ -17,197 +16,254 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid #eee;
 }
 
 .admin-header h2 {
   color: #2c3e50;
-  margin: 0;
   font-size: 1.8rem;
+  margin: 0;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .user-count {
-  background-color: #f8f9fa;
+  background: #f8f9fa;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  color: #6c757d;
   font-size: 0.9rem;
+  color: #6c757d;
   margin: 0;
 }
 
-/* Table Styles */
+.refresh-btn {
+  padding: 0.5rem 1rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.refresh-btn:hover {
+  background: #2980b9;
+}
+
+.refresh-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
 .table-responsive {
   overflow-x: auto;
+  margin-bottom: 2rem;
 }
 
 .users-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
 }
 
 .users-table th {
-  background-color: #3498db;
-  color: white;
+  background: #f8f9fa;
   padding: 1rem;
   text-align: left;
-  font-weight: 500;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
 }
 
 .users-table td {
   padding: 1rem;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 1px solid #eee;
   vertical-align: middle;
 }
 
+.users-table tr:last-child td {
+  border-bottom: none;
+}
+
 .users-table tr:hover {
-  background-color: #f8f9fa;
+  background: #f8f9fa;
 }
 
 .users-table tr.deleting {
   opacity: 0.6;
-  background-color: #fff3f3;
+  background: #fff3f3;
 }
 
-/* Form Elements */
-select {
+.users-table tr.Admin td {
+  border-left: 3px solid #3498db;
+}
+
+.users-table tr.User td {
+  border-left: 3px solid #2ecc71;
+}
+
+.users-table tr.Editor td {
+  border-left: 3px solid #9b59b6;
+}
+
+.users-table tr.Moderator td {
+  border-left: 3px solid #f39c12;
+}
+
+.users-table select {
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
-  background-color: white;
+  background: white;
   font-size: 0.9rem;
-  transition: all 0.3s;
+  transition: all 0.2s ease;
 }
 
-select:focus {
+.users-table select:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
-/* Buttons */
+/* Replace the existing delete button styles with these */
+
 .delete-btn {
   padding: 0.5rem 1rem;
-  background-color: #e74c3c;
-  color: white;
-  border: none;
+  background: transparent;
+  color: #6c757d; /* Neutral gray text */
+  border: 1px solid #dee2e6; /* Light gray border */
   border-radius: 4px;
   cursor: pointer;
+  transition: all 0.2s ease;
   font-size: 0.9rem;
-  transition: all 0.3s;
+  min-width: 80px;
+  text-align: center;
 }
 
-.delete-btn:hover:not(:disabled) {
-  background-color: #c0392b;
-}
-
-.delete-btn:disabled {
-  background-color: #95a5a6;
-  cursor: not-allowed;
+.delete-btn:hover {
+  background: #e74c3c; /* Red background on hover */
+  color: white; /* White text on hover */
+  border-color: #e74c3c; /* Red border to match */
 }
 
 .delete-btn.processing {
-  background-color: #f39c12;
+  background: rgba(231, 76, 60, 0.7); /* Semi-transparent red when processing */
+  color: white;
+  border-color: transparent;
 }
 
-/* Status Indicators */
-.loading-container,
-.error-container,
-.update-status {
+.delete-btn .deleting-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: inherit; /* Inherits the white color when processing */
+}
+
+.delete-btn .deleting-text::after {
+  content: "";
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.no-users td {
+  text-align: center;
+  color: #6c757d;
+  padding: 2rem;
+}
+
+.status-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.status-message {
+  background: #2c3e50;
+  color: white;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.loading-container, .error-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  min-height: 300px;
   text-align: center;
 }
 
 .spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid rgba(52, 152, 219, 0.2);
+  border-top-color: #3498db;
   border-radius: 50%;
-  border-top: 4px solid #3498db;
-  width: 40px;
-  height: 40px;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 .error-message {
   color: #e74c3c;
-  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  max-width: 500px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
 }
 
 .retry-btn {
-  padding: 0.5rem 1.5rem;
-  background-color: #3498db;
+  padding: 0.7rem 1.5rem;
+  background: #3498db;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  font-size: 1rem;
 }
 
-.retry-btn:hover {
-  background-color: #2980b9;
-}
-
-.update-status p {
-  color: #3498db;
-  font-style: italic;
-}
-
-/* No Users Message */
-.no-users td {
-  text-align: center;
-  padding: 2rem;
-  color: #7f8c8d;
-}
-
-/* Responsive Design */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .admin-users-container {
-    padding: 1rem;
-    margin: 1rem;
-  }
-
   .admin-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 1rem;
   }
-
-  .user-count {
-    margin-top: 0.5rem;
+  
+  .header-info {
+    width: 100%;
+    justify-content: space-between;
   }
-
-  .users-table th,
+  
+  .users-table th, 
   .users-table td {
     padding: 0.75rem 0.5rem;
     font-size: 0.85rem;
   }
-
-  select, .delete-btn {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
-  }
-}
-
-/* Animation for smoother transitions */
-.users-table tr {
-  transition: all 0.3s ease;
-}
-
-/* Role-specific colors */
-.users-table tr td:nth-child(3) select option[value="Admin"] {
-  color: #e74c3c;
-  font-weight: bold;
-}
-
-.users-table tr td:nth-child(3) select option[value="Editor"] {
-  color: #f39c12;
-  font-weight: bold;
 }
