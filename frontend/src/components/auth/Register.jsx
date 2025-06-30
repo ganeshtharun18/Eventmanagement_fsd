@@ -15,6 +15,7 @@ const Register = ({ onRegisterSuccess }) => {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -28,15 +29,23 @@ const Register = ({ onRegisterSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
     
     try {
       const response = await register(userData);
       if (response.success) {
-        if (onRegisterSuccess) {
-          onRegisterSuccess();
-        } else {
-          navigate('/login'); // Default redirect after success
-        }
+        const message = userData.role === 'Admin' 
+          ? 'Admin registered successfully!' 
+          : 'User registered successfully!';
+        setSuccessMessage(message);
+
+        setTimeout(() => {
+          if (onRegisterSuccess) {
+            onRegisterSuccess();
+          } else {
+            navigate(userData.role === 'Admin' ? '/admin' : '/login');
+          }
+        }, 2000);
       } else {
         setError(response.error || 'Registration failed');
       }
@@ -53,6 +62,7 @@ const Register = ({ onRegisterSuccess }) => {
       <h3>Register</h3>
 
       {error && <div className="error-message">{error}</div>}
+      {successMessage && <div className="success-message">{successMessage}</div>}
 
       <div className="form-group">
         <label>Username</label>

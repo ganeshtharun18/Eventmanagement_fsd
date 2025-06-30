@@ -5,28 +5,50 @@ import './Reminders.css';
 const Reminders = ({ username }) => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [notificationPermission, setNotificationPermission] = useState('default');
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(false);
-  const [notificationSupported, setNotificationSupported] = useState(false);
 
+  // Check notification support and permission status
   useEffect(() => {
-    setNotificationSupported('Notification' in window);
-    if ('Notification' in window && Notification.permission === 'default') {
-      setShowPermissionPrompt(true);
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+      setShowPermissionPrompt(Notification.permission === 'default');
     }
   }, []);
 
+  // Fetch upcoming events (next 24 hours)
   useEffect(() => {
     const fetchUpcomingEvents = async () => {
       try {
         setLoading(true);
-        const events = await getUpcomingEvents(username); // 🔁 FROM BACKEND
+        setError(null);
+        
+        // Get current time and time 24 hours from now
+        const now = new Date();
+        const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        
+        // Format dates for API call
+        const formatDate = (date) => date.toISOString().split('T')[0];
+        const formatTime = (date) => date.toTimeString().substring(0, 5);
+        
+        const events = await getUpcomingEvents(
+          username,
+          formatDate(now),
+          formatTime(now),
+          formatDate(twentyFourHoursLater),
+          formatTime(twentyFourHoursLater)
+        );
+        
         setUpcomingEvents(events);
-
-        if (Notification.permission === 'granted') {
+        
+        // Show notifications if permission granted
+        if (notificationPermission === 'granted') {
           showNotifications(events);
         }
-      } catch (error) {
-        console.error('Error fetching reminders:', error);
+      } catch (err) {
+        console.error('Error fetching reminders:', err);
+        setError('Failed to load upcoming events');
       } finally {
         setLoading(false);
       }
@@ -34,68 +56,95 @@ const Reminders = ({ username }) => {
 
     fetchUpcomingEvents();
 
-    const interval = setInterval(fetchUpcomingEvents, 60 * 60 * 1000); // every hour
+    // Refresh every hour
+    const interval = setInterval(fetchUpcomingEvents, 60 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [username]);
+  }, [username, notificationPermission]);
 
   const requestNotificationPermission = async () => {
     try {
       const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      setShowPermissionPrompt(permission === 'default');
+      
       if (permission === 'granted') {
-        setShowPermissionPrompt(false);
         showNotifications(upcomingEvents);
-        return true;
       }
-    } catch (error) {
-      console.error('Notification permission error:', error);
+    } catch (err) {
+      console.error('Notification permission error:', err);
     }
-    return false;
   };
 
   const showNotifications = (events) => {
-    if (!notificationSupported || Notification.permission !== 'granted') return;
+    if (notificationPermission !== 'granted' || !events.length) return;
 
     events.forEach(event => {
       try {
-        new Notification(`Upcoming: ${event.name}`, {
-          body: `At ${event.time} - ${event.location}`,
+        const notification = new Notification(`Upcoming Event: ${event.name}`, {
+          body: `Starts at ${event.time} | Location: ${event.location}`,
           icon: '/notification-icon.png',
-          tag: `event-${event.id}`
+          tag: `event-reminder-${event.id}`
         });
-      } catch (error) {
-        console.error('Notification error:', error);
+        
+        // Close notification after 10 seconds
+        setTimeout(() => notification.close(), 10000);
+      } catch (err) {
+        console.error('Failed to show notification:', err);
       }
     });
+  };
+
+  // Format time to display (e.g., "2:30 PM")
+  const formatDisplayTime = (timeString) => {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours);
+    return `${hour > 12 ? hour - 12 : hour}:${minutes} ${hour >= 12 ? 'PM' : 'AM'}`;
   };
 
   return (
     <div className="reminders-container">
       <h3>Upcoming Events (Next 24 Hours)</h3>
 
-      {notificationSupported && showPermissionPrompt && (
+      {error && <div className="error-message">{error}</div>}
+
+      {('Notification' in window) && showPermissionPrompt && (
         <div className="notification-prompt">
-          <span>Enable event notifications?</span>
-          <button onClick={requestNotificationPermission}>
+          <p>Get notified about upcoming events?</p>
+          <button 
+            onClick={requestNotificationPermission}
+            className="enable-notifications-btn"
+          >
             Enable Notifications
           </button>
         </div>
       )}
 
       {loading ? (
-        <div>Loading reminders...</div>
+        <div className="loading-message">Loading events...</div>
       ) : upcomingEvents.length === 0 ? (
-        <div>No events within 24 hours.</div>
+        <div className="no-events-message">No upcoming events in the next 24 hours</div>
       ) : (
-        <div className="reminders-list">
+        <ul className="reminders-list">
           {upcomingEvents.map(event => (
-            <div key={event.id} className="reminder-item">
-              <h4>{event.name}</h4>
-              <p><strong>Date:</strong> {event.date} at {event.time}</p>
-              <p><strong>Location:</strong> {event.location}</p>
-              {event.description && <p>{event.description}</p>}
-            </div>
+            <li key={event.id} className="reminder-item">
+              <div className="event-header">
+                <h4 className="event-name">{event.name}</h4>
+                <span className="event-time">
+                  {event.date} • {formatDisplayTime(event.time)}
+                </span>
+              </div>
+              {event.location && (
+                <p className="event-location">
+                  <span className="label">Location:</span> {event.location}
+                </p>
+              )}
+              {event.description && (
+                <p className="event-description">{event.description}</p>
+              )}
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
