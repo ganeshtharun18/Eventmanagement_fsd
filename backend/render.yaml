@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: flask-react-fullstack
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      npm install --prefix frontend
+      npm run build --prefix frontend
+    startCommand: gunicorn backend.app:app
+    envVars:
+      - key: DB_NAME
+        value: event_management.db
+      - key: GOOGLE_MAPS_API_KEY
+        value: AIzaSyDhabg8MMxK6hwUpkGMpdWH_IhPX7npSws
+      - key: SENDGRID_API_KEY
+        value: your_key_here
+      - key: ADMIN_SECRET
+        value: supersecretkey123
