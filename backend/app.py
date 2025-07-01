@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import hashlib
@@ -107,7 +107,14 @@ def get_current_user(request):
 def is_admin(request):
     return request.headers.get('X-Admin-Token') == ADMIN_SECRET
 
+app = Flask(__name__, static_folder='../frontend/build', static_url_path='/')
 
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    if path and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, 'C:\Users\Ganesh\Desktop\fsd_event_ms\frontend\public\index.html')
 
 @app.route('/admin/verify-token', methods=['POST'])
 def verify_token():
@@ -161,7 +168,7 @@ def login():
     
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute(
+    cursor.execute(html
         "SELECT username, role FROM users WHERE username = ? AND password = ?",
         (username, hash_password(password))
     )
